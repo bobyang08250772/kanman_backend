@@ -1,0 +1,62 @@
+.DS_Store
+
+# ──────────────
+# Python
+# ──────────────
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Byte-compiled / cached
+*.py[cod]
+*$py.class
+
+# SQLite / Logs / Dumps
+*.sqlite3
+*.log
+*.pot
+*.mo
+*.db
+*.dump.json
+
+# Local environment variables
+.env
+.env.*
+secrets.json
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+.Python
+
+# pipenv / poetry / pyenv
+Pipfile.lock
+.poetry/
+.python-version
+
+# Django migrations
+**/migrations/
+!*/migrations/__init__.py
+
+# Coverage & test reports
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# VSCode / IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+*.bak
+*.tmp
