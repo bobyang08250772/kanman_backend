@@ -27,7 +27,9 @@ class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        owner = instance.owner_id
+        owner = instance.owner
+        members = instance.members.all()
+
         return Response({
             'id': instance.id,
             'title': instance.title,
@@ -35,8 +37,15 @@ class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
                 'id': owner.id,
                 'email': owner.email,
                 'fullname': f'{owner.first_name} {owner.last_name}'
-            }
-        }, status=status.HTTP_200_OK)
+            }, 
+            'members_data':[
+                {'id': m.id, 
+                 'email': m.email, 
+                 'fullname': f'{m.first_name} {m.last_name}'
+                 } 
+                for m in members]
+            }, 
+            status=status.HTTP_200_OK)
 
 
 
