@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 class Board(models.Model):
     """A project board that holds multiple tasks and members."""
-    
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_boards')
     title = models.CharField(max_length=255)
     members = models.ManyToManyField(User, related_name='boards')  # Users assigned to the board
 

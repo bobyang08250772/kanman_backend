@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 
 from .serializer import BoardSerializer, TaskSerializer, TaskCommentSerializer
-from .permissions import IsAuthenticatedAndTaskRelatedOrSuperUser, IsAuthenticateAndNotGuestUser
+from .permissions import IsAuthenticatedAndTaskRelatedOrSuperUser, IsAuthenticateAndNotGuestUser, IsAuthenticatedAndSelf, IsAuthenticatedAndBoardRelatedOrSuperUser, IsAuthenticatedAndTAssignToMeOrSuperUser, IsAuthenticatedAndRevieingOrSuperUser
 
 class BoardListView(generics.ListCreateAPIView):
     """List all boards or create a new one."""
@@ -18,9 +18,25 @@ class BoardListView(generics.ListCreateAPIView):
 
 class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, or delete a board."""
-    permission_classes = [IsAuthenticateAndNotGuestUser]
+    permission_classes = [IsAuthenticatedAndBoardRelatedOrSuperUser]
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        owner = instance.owner_id
+        return Response({
+            'id': instance.id,
+            'title': instance.title,
+            'owner_data': {
+                'id': owner.id,
+                'email': owner.email,
+                'fullname': f'{owner.first_name} {owner.last_name}'
+            }
+        }, status=status.HTTP_200_OK)
 
 
 
@@ -30,16 +46,10 @@ class TaskListView(generics.ListCreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
 
-    # def create(self, request, *args, **kwargs):
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 class TaskListAssignToMeView(generics.ListCreateAPIView):
     """List tasks assigned to the current user."""
-    permission_classes = [IsAuthenticatedAndTaskRelatedOrSuperUser]
+    permission_classes = [IsAuthenticatedAndTAssignToMeOrSuperUser]
     serializer_class = TaskSerializer
 
     def get_queryset(self):
@@ -49,7 +59,7 @@ class TaskListAssignToMeView(generics.ListCreateAPIView):
 
 class TaskListReviewingMeView(generics.ListCreateAPIView):
     """List tasks where the current user is the reviewer."""
-    permission_classes = [IsAuthenticatedAndTaskRelatedOrSuperUser]
+    permission_classes = [IsAuthenticatedAndRevieingOrSuperUser]
     serializer_class = TaskSerializer
 
     def get_queryset(self):
@@ -88,6 +98,6 @@ class TaskCommentListView(generics.ListCreateAPIView):
 
 class TaskCommentDestroyView(generics.DestroyAPIView):
     """Delete a specific task comment."""
-    permission_classes = [IsAuthenticatedAndTaskRelatedOrSuperUser]
+    permission_classes = [IsAuthenticatedAndSelf]
     queryset = Comment.objects.all()
     serializer_class = TaskCommentSerializer

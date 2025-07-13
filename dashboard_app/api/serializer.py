@@ -77,6 +77,7 @@ class BoardSerializer(serializers.ModelSerializer):
     ticket_count = serializers.SerializerMethodField()
     tasks_to_do_count = serializers.SerializerMethodField()
     tasks_high_prio_count = serializers.SerializerMethodField()
+    owner_id = serializers.SerializerMethodField()
     
     tasks = TaskSerializer(many=True, read_only=True)
     members = serializers.PrimaryKeyRelatedField(
@@ -87,6 +88,9 @@ class BoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = '__all__'
+
+    def get_owner_id(self, obj):
+        return obj.owner.id
 
     def get_member_count(self, obj):
         """Return number of board members."""
