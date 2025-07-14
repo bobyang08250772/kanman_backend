@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from dashboard_app.models import Task
 
 
 class IsAuthenticateAndNotGuestUser(BasePermission):
@@ -32,6 +33,10 @@ class IsAuthenticatedAndBoardRelatedOrSuperUser(BasePermission):
 class IsAuthenticatedAndTAssignToMeOrSuperUser(BasePermission):
     """Allow if user is assginee or is superuser."""
 
+    """Grant at the view level"""
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
     def has_object_permission(self, request, view, obj):
         """Grant if user is task assignee or superuser."""
         user = request.user
@@ -43,8 +48,22 @@ class IsAuthenticatedAndTAssignToMeOrSuperUser(BasePermission):
         )
     
 
+class IsAuthenticatedAndBoardMember(BasePermission):
+    """Allow if user is board member or  superuser."""
+   
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_superuser or request.user in obj.board.members.all()
+
+
 class IsAuthenticatedAndRevieingOrSuperUser(BasePermission):
     """Allow if user is assginee or is superuser."""
+
+    """Grant at the view level"""
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
         """Grant if user is task assignee or superuser."""
@@ -59,12 +78,16 @@ class IsAuthenticatedAndRevieingOrSuperUser(BasePermission):
 
 class IsAuthenticatedAndTaskRelatedOrSuperUser(BasePermission):
     """Allow if user is related to the task or is superuser."""
+    def has_permission(self, request, view):
+        task_id = view.kwargs.get('task_id')
+        task = Task.objects.select_related('board').get(id=task_id)
+        user = request.user
+        return user.is_superuser or user in task.board.members.all()
+
 
     def has_object_permission(self, request, view, obj):
         """Grant if user is task assignee, creator, reviewer, or superuser."""
         user = request.user
-        if request.method in SAFE_METHODS:
-            return user and user.is_authenticated
         return (
             user and user.is_authenticated and (
                 user == obj.assignee or

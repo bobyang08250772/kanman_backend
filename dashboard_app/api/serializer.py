@@ -72,7 +72,7 @@ class TaskCommentSerializer(serializers.ModelSerializer):
 
 class BoardSerializer(serializers.ModelSerializer):
     """Serializer for board with task stats and members."""
-    
+
     owner_id = serializers.SerializerMethodField()
     
     tasks = TaskSerializer(many=True, read_only=True)
@@ -124,10 +124,15 @@ class BoardListSerializer(serializers.ModelSerializer):
     tasks_to_do_count = serializers.SerializerMethodField()
     tasks_high_prio_count = serializers.SerializerMethodField()
     owner_id = serializers.SerializerMethodField()
+    members = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all(),
+        write_only=True 
+    )
     
     class Meta:
         model = Board
-        exclude = ['owner', 'members']
+        exclude = ['owner']
 
     def get_owner_id(self, obj):
         return obj.owner.id

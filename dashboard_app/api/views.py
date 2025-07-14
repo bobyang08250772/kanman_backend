@@ -1,18 +1,19 @@
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from dashboard_app.models import Board, Task, Comment
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 
 from .serializer import BoardSerializer, TaskSerializer, TaskCommentSerializer, BoardListSerializer
-from .permissions import IsAuthenticatedAndTaskRelatedOrSuperUser, IsAuthenticateAndNotGuestUser, IsAuthenticatedAndSelf, IsAuthenticatedAndBoardRelatedOrSuperUser, IsAuthenticatedAndTAssignToMeOrSuperUser, IsAuthenticatedAndRevieingOrSuperUser
+from .permissions import IsAuthenticatedAndTaskRelatedOrSuperUser, IsAuthenticateAndNotGuestUser, IsAuthenticatedAndSelf, IsAuthenticatedAndBoardRelatedOrSuperUser, IsAuthenticatedAndTAssignToMeOrSuperUser, IsAuthenticatedAndRevieingOrSuperUser, IsAuthenticatedAndBoardMember
 
 class BoardListView(generics.ListCreateAPIView):
     """List all boards or create a new one."""
-    permission_classes = [IsAuthenticateAndNotGuestUser]
-    queryset = Board.objects.all().prefetch_related('members')
+    permission_classes = [IsAuthenticated]
+    queryset = Board.objects.all()
     serializer_class = BoardListSerializer
 
     def perform_create(self, serializer):
@@ -54,12 +55,20 @@ class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class TaskListView(generics.ListCreateAPIView):
     """List all tasks or create a new one."""
-    permission_classes = [IsAuthenticateAndNotGuestUser]
+    permission_classes = [IsAuthenticatedAndBoardMember]
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
 
+    def perform_create(self, serializer):
+        board = serializer.validated_data.get('board')
+        user = self.request.user
+        if not user.is_superuser and user not in board.members.all():
+            raise PermissionDenied("User is not a member of this board.")
 
-class TaskListAssignToMeView(generics.ListCreateAPIView):
+        serializer.save(creator=user)
+    
+
+class TaskListAssignToMeView(generics.ListAPIView):
     """List tasks assigned to the current user."""
     permission_classes = [IsAuthenticatedAndTAssignToMeOrSuperUser]
     serializer_class = TaskSerializer
@@ -69,7 +78,7 @@ class TaskListAssignToMeView(generics.ListCreateAPIView):
         return Task.objects.filter(assignee=user)
 
 
-class TaskListReviewingMeView(generics.ListCreateAPIView):
+class TaskListReviewingMeView(generics.ListAPIView):
     """List tasks where the current user is the reviewer."""
     permission_classes = [IsAuthenticatedAndRevieingOrSuperUser]
     serializer_class = TaskSerializer

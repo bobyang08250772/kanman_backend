@@ -12,13 +12,18 @@ class CustomUserAdmin(DefaultUserAdmin):
 
 
 @admin.register(Comment)
-class TaskAdmin(admin.ModelAdmin):
+class CommentAdmin(admin.ModelAdmin):
     list_display = ('id', 'content', 'user', 'task_id')
 
     def task_id(self, obj):
         return obj.task.id
 
-admin.site.register(Task)
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title')
+
+    def task_id(self, obj):
+        return obj.task.id
 
 
 
