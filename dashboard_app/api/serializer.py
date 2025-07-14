@@ -73,10 +73,6 @@ class TaskCommentSerializer(serializers.ModelSerializer):
 class BoardSerializer(serializers.ModelSerializer):
     """Serializer for board with task stats and members."""
     
-    member_count = serializers.SerializerMethodField()
-    ticket_count = serializers.SerializerMethodField()
-    tasks_to_do_count = serializers.SerializerMethodField()
-    tasks_high_prio_count = serializers.SerializerMethodField()
     owner_id = serializers.SerializerMethodField()
     
     tasks = TaskSerializer(many=True, read_only=True)
@@ -87,7 +83,51 @@ class BoardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = '__all__'
+        fields = [
+            'id',
+            'title',
+            'owner_id',
+            'members',
+            'tasks',
+        ]
+        read_only_fields = ['owner']
+
+    def get_owner_id(self, obj):
+        return obj.owner.id
+
+    def validate(self, data):
+        """General validation (can be extended)."""
+        print("Main validate called with:", data)
+        return data
+
+    def validate_members(self, value):
+        """Disallow superusers as board members."""
+        superusers = [user for user in value if user.is_superuser]
+        if superusers:
+            raise serializers.ValidationError("Superusers cannot be added as board members.")
+        return value
+
+    def to_representation(self, instance):
+        """Return nested member data using UserSerializer."""
+        rep = super().to_representation(instance)
+        members_qs = instance.members.all()
+        rep['members'] = UserSerializer(members_qs, many=True).data
+        return rep
+
+
+
+class BoardListSerializer(serializers.ModelSerializer):
+    """Serializer for board with task stats and members."""
+    
+    member_count = serializers.SerializerMethodField()
+    ticket_count = serializers.SerializerMethodField()
+    tasks_to_do_count = serializers.SerializerMethodField()
+    tasks_high_prio_count = serializers.SerializerMethodField()
+    owner_id = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Board
+        exclude = ['owner', 'members']
 
     def get_owner_id(self, obj):
         return obj.owner.id
@@ -108,11 +148,6 @@ class BoardSerializer(serializers.ModelSerializer):
         """Return number of high priority tasks."""
         return obj.tasks.filter(priority='high').count()
 
-    def validate(self, data):
-        """General validation (can be extended)."""
-        print("Main validate called with:", data)
-        return data
-
     def validate_members(self, value):
         """Disallow superusers as board members."""
         superusers = [user for user in value if user.is_superuser]
@@ -120,9 +155,7 @@ class BoardSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Superusers cannot be added as board members.")
         return value
 
-    def to_representation(self, instance):
-        """Return nested member data using UserSerializer."""
-        rep = super().to_representation(instance)
-        members_qs = instance.members.all()
-        rep['members'] = UserSerializer(members_qs, many=True).data
-        return rep
+
+
+       
+

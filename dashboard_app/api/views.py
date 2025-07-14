@@ -6,14 +6,17 @@ from dashboard_app.models import Board, Task, Comment
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 
-from .serializer import BoardSerializer, TaskSerializer, TaskCommentSerializer
+from .serializer import BoardSerializer, TaskSerializer, TaskCommentSerializer, BoardListSerializer
 from .permissions import IsAuthenticatedAndTaskRelatedOrSuperUser, IsAuthenticateAndNotGuestUser, IsAuthenticatedAndSelf, IsAuthenticatedAndBoardRelatedOrSuperUser, IsAuthenticatedAndTAssignToMeOrSuperUser, IsAuthenticatedAndRevieingOrSuperUser
 
 class BoardListView(generics.ListCreateAPIView):
     """List all boards or create a new one."""
     permission_classes = [IsAuthenticateAndNotGuestUser]
-    queryset = Board.objects.all()
-    serializer_class = BoardSerializer
+    queryset = Board.objects.all().prefetch_related('members')
+    serializer_class = BoardListSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -110,3 +113,5 @@ class TaskCommentDestroyView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticatedAndSelf]
     queryset = Comment.objects.all()
     serializer_class = TaskCommentSerializer
+
+
