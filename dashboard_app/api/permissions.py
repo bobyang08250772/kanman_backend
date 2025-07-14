@@ -1,5 +1,7 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.exceptions import NotFound
 from dashboard_app.models import Task
+
 
 
 class IsAuthenticateAndNotGuestUser(BasePermission):
@@ -80,7 +82,12 @@ class IsAuthenticatedAndTaskRelatedOrSuperUser(BasePermission):
     """Allow if user is related to the task or is superuser."""
     def has_permission(self, request, view):
         task_id = view.kwargs.get('task_id')
-        task = Task.objects.select_related('board').get(id=task_id)
+    
+        try:
+            task = Task.objects.select_related('board').get(id=task_id)
+        except Task.DoesNotExist:
+            raise NotFound("Task not found.")
+        
         user = request.user
         return user.is_superuser or user in task.board.members.all()
 

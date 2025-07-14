@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from dashboard_app.models import Board, Task, Comment
 from django.contrib.auth.models import User
+from rest_framework.exceptions import NotFound
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -30,6 +31,10 @@ class TaskSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(), source='reviewer', write_only=True, required=True
     )
 
+    board = serializers.PrimaryKeyRelatedField(
+        queryset=Board.objects.all(), required=True
+    )
+
     comments_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -43,9 +48,17 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Set the task creator to the current user."""
+      
         request = self.context['request']
         validated_data['creator'] = request.user
         return super().create(validated_data)
+    
+    def validate_board(self, value):
+        try:
+            Board.objects.get(id=value.id)
+        except Board.DoesNotExist:
+            raise NotFound("Board not found.")
+        return value
 
 
 class TaskCommentSerializer(serializers.ModelSerializer):

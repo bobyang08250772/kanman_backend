@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
 from dashboard_app.models import Board, Task, Comment
 from django.shortcuts import get_object_or_404
@@ -59,11 +59,27 @@ class TaskListView(generics.ListCreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            raise NotFound(detail="Required fields missing.")  
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     def perform_create(self, serializer):
-        board = serializer.validated_data.get('board')
+        board_id = self.request.data.get('board')
+        if not board_id:
+            raise NotFound("Board ID is required.")
+
+        try:
+            board = Board.objects.get(id=board_id)
+        except Board.DoesNotExist:
+            raise NotFound("Board not found.")
+
         user = self.request.user
+        print(user)
         if not user.is_superuser and user not in board.members.all():
-            raise PermissionDenied("User is not a member of this board.")
+            raise PermissionDenied("You are not a member of this board.")
 
         serializer.save(creator=user)
     
@@ -93,6 +109,7 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticatedAndTaskRelatedOrSuperUser]
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+
 
 
 class TaskCommentListView(generics.ListCreateAPIView):
