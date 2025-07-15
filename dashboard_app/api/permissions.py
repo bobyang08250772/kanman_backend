@@ -80,7 +80,6 @@ class IsAuthenticatedAndTaskRelatedOrSuperUser(BasePermission):
     """Allow if user is related to the task or is superuser."""
     def has_permission(self, request, view):
         task_id = view.kwargs.get('pk')
-        print(task_id)
         try:
             task = Task.objects.select_related('board').get(id=task_id)
         except Task.DoesNotExist:
