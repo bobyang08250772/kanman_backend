@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 
 from .serializer import BoardSerializer, TaskSerializer, TaskCommentSerializer, BoardListSerializer
-from .permissions import IsAuthenticatedAndTaskRelatedOrSuperUser, IsAuthenticateAndNotGuestUser, IsAuthenticatedAndSelf, IsAuthenticatedAndBoardRelatedOrSuperUser, IsAuthenticatedAndTAssignToMeOrSuperUser, IsAuthenticatedAndRevieingOrSuperUser, IsAuthenticatedAndBoardMember
+from .permissions import IsAuthenticatedAndTaskRelatedOrSuperUser, IsAuthenticateAndNotGuestUser, IsAuthenticatedAndSelf, IsAuthenticatedAndBoardRelatedOrSuperUser, IsAuthenticatedAndTAssignToMeOrSuperUser, IsAuthenticatedAndRevieingOrSuperUser, IsAuthenticatedAndBoardMember, IsAuthenticatedAndCommentRelatedOrSuperUser
 
 class BoardListView(generics.ListCreateAPIView):
     """List all boards or create a new one."""
@@ -114,7 +114,7 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class TaskCommentListView(generics.ListCreateAPIView):
     """List or create comments for a specific task."""
-    permission_classes = [IsAuthenticatedAndTaskRelatedOrSuperUser]
+    permission_classes = [IsAuthenticatedAndCommentRelatedOrSuperUser]
     queryset = Comment.objects.all()
     serializer_class = TaskCommentSerializer
 

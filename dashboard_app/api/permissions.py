@@ -21,8 +21,6 @@ class IsAuthenticatedAndBoardRelatedOrSuperUser(BasePermission):
     def has_object_permission(self, request, view, obj):
         """Grant if user is board member or owner or superuser."""
         user = request.user
-        if request.method in SAFE_METHODS:
-            return user and user.is_authenticated
         return (
             user and user.is_authenticated and (
                 user == obj.owner or
@@ -82,6 +80,33 @@ class IsAuthenticatedAndTaskRelatedOrSuperUser(BasePermission):
     """Allow if user is related to the task or is superuser."""
     def has_permission(self, request, view):
         task_id = view.kwargs.get('pk')
+        print(task_id)
+        try:
+            task = Task.objects.select_related('board').get(id=task_id)
+        except Task.DoesNotExist:
+            raise NotFound("Task not found.")
+        
+        user = request.user
+        return user.is_superuser or user in task.board.members.all()
+
+
+    def has_object_permission(self, request, view, obj):
+        """Grant if user is task assignee, creator, reviewer, or superuser."""
+        user = request.user
+        return (
+            user and user.is_authenticated and (
+                user == obj.assignee or
+                user == obj.creator or
+                user == obj.reviewer or
+                user.is_superuser
+            )
+        )
+    
+
+class IsAuthenticatedAndCommentRelatedOrSuperUser(BasePermission):
+    """Allow if user is related to the task or is superuser."""
+    def has_permission(self, request, view):
+        task_id = view.kwargs.get('task_id')
         print(task_id)
         try:
             task = Task.objects.select_related('board').get(id=task_id)
