@@ -53,10 +53,7 @@ Notice Frontend and Backend should be runing seperately.
 Go to frontend folder, open index.html in Live Server
 
 ### 3. Backend
-
-```bash
-cd backend
-```
+Go to root folder
 
 ### 3.1. Create and Activate a Virtual Environment
 ```bash

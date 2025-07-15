@@ -66,7 +66,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.1.45:5501'
 ]
 
-ROOT_URLCONF = 'backend.urls'
+ROOT_URLCONF = 'core.urls'
 
 TEMPLATES = [
     {
@@ -83,7 +83,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # Database
